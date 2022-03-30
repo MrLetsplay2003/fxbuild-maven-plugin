@@ -6,22 +6,24 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.jar.Manifest;
+import java.util.stream.Collectors;
 
+import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-
-import me.mrletsplay.mrcore.misc.FriendlyException;
+import org.apache.maven.project.MavenProject;
 
 /**
  * Goal which touches a timestamp file.
@@ -40,6 +42,12 @@ public class FXBuild extends AbstractMojo {
 	 */
 	@Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}-patched.jar", property = "tempFile", required = true)
 	private File tempFile;
+	
+	/**
+	 * The project to get the JavaFX dependencies from
+	 */
+	@Parameter(defaultValue = "${project}")
+	private MavenProject mavenProject;
 
 	public void execute() throws MojoExecutionException {
 		getLog().info("Patching JAR file: " + buildFile.getAbsolutePath());
@@ -71,13 +79,52 @@ public class FXBuild extends AbstractMojo {
 			}
 			
 			String oldMainClass = mf.getMainAttributes().getValue("Main-Class");
-			mf.getMainAttributes().putValue("Main-Class", "me.mrletsplay.fxbuild.loader.FXLoader");
 
 			getLog().info("Old Main-Class: " + oldMainClass);
 			
+			List<Dependency> deps = mavenProject.getDependencies().stream()
+					.filter(d -> d.getGroupId().equalsIgnoreCase("org.openjfx"))
+					.filter(d -> {
+						if(!d.getScope().equalsIgnoreCase("provided")) {
+							getLog().warn("Every OpenJFX dependency's scope should be set to 'provided'. Ignoring artifact '" + d.getArtifactId() + "'");
+							return false;
+						}
+						
+						if(d.getClassifier() != null && !d.getClassifier().isEmpty()) {
+							getLog().warn("Ignoring OpenJFX artifact '" + d.getArtifactId() + "' with non-empty classifier '" + d.getClassifier() + "'");
+							return false;
+						}
+						
+						if(d.getVersion().equalsIgnoreCase("latest")) {
+							getLog().warn("Ignoring OpenJFX artifact '" + d.getArtifactId() + "'. Version 'latest' is not supported");
+							return false;
+						}
+						
+						return true;
+					})
+					.collect(Collectors.toList());
+			
+			if(deps.isEmpty()) {
+				getLog().warn("No OpenJFX dependencies with scope 'provided' found. Not doing anything");
+				return;
+			}
+			
+			getLog().info("OpenJFX dependencies: " + deps.stream().map(d -> d.getArtifactId()).collect(Collectors.joining(", ")));
+
+			getLog().info("Writing manifest");
+			
+			mf.getMainAttributes().putValue("Main-Class", "me.mrletsplay.fxbuild.loader.FXLoader");
 			try(OutputStream out = Files.newOutputStream(p)) {
 				mf.write(out);
 			}
+			
+			String meta = oldMainClass + "\n" + deps.stream()
+				.map(d -> d.getArtifactId() + ":" + d.getVersion())
+				.collect(Collectors.joining(";"));
+			
+			Path metaPath = fs.getPath("/META-INF/fxbuild/meta.txt");
+			Files.createDirectories(metaPath.getParent());
+			Files.write(metaPath, meta.getBytes(StandardCharsets.UTF_8));
 			
 			Path copyFiles = plFS.getPath("/me/mrletsplay/fxbuild/loader/");
 			Files.walk(copyFiles).forEach(fl -> {
