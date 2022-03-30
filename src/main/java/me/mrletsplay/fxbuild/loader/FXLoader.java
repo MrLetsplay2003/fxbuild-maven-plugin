@@ -91,13 +91,10 @@ public class FXLoader {
 			}
 		}
 		
-		System.out.println(urls);
-		
 		try {
 			ClassLoader cl = new FXClassLoader(urls.toArray(URL[]::new), FXLoader.class.getClassLoader());
 			Thread.currentThread().setContextClassLoader(cl);
 			Class<?> main = cl.loadClass(mainClass);
-			System.out.println(main.getClassLoader());
 			main.getMethod("main", String[].class).invoke(null, (Object) args);
 		}catch(IllegalAccessException | IllegalArgumentException | NoSuchMethodException | SecurityException | ClassNotFoundException e) {
 			throw new FXLoaderException("Failed to run program", e);
