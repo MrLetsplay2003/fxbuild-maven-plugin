@@ -65,6 +65,12 @@ public class FXLoader {
 				urls.add(filePath.toUri().toURL());
 				if(!Files.exists(filePath)) {
 					HttpResponse<byte[]> r = httpClient.send(noClassifier, BodyHandlers.ofByteArray());
+					if(r.statusCode() != 200) {
+						log("Failed to download dependency '" + dep + "'");
+						System.exit(1);
+						return;
+					}
+					
 					Files.write(filePath, r.body());
 				}
 			} catch (IOException | InterruptedException e) {
@@ -79,6 +85,12 @@ public class FXLoader {
 					if(r.statusCode() == 404) {
 						log("Dependency " + dep + " doesn't seem to have platform-specific code");
 						continue;
+					}
+					
+					if(r.statusCode() != 200) {
+						log("Failed to download dependency '" + dep + "'");
+						System.exit(1);
+						return;
 					}
 					
 					Files.write(filePath, r.body());
