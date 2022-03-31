@@ -52,8 +52,6 @@ public class FXLoader {
 
 		HttpClient httpClient = HttpClient.newBuilder().build();
 		for(String dep : dependencies) {
-			log("Downloading " + dep + "...");
-			
 			String[] spl = dep.split(":");
 			String partialURL = MAVEN_REPO_URL
 					.replace("{artifact}", spl[0])
@@ -64,6 +62,7 @@ public class FXLoader {
 				Path filePath = Paths.get(downloadPath.getPath(), spl[0] + ".jar");
 				urls.add(filePath.toUri().toURL());
 				if(!Files.exists(filePath)) {
+					log("Downloading " + dep + "...");
 					HttpResponse<byte[]> r = httpClient.send(noClassifier, BodyHandlers.ofByteArray());
 					if(r.statusCode() != 200) {
 						log("Failed to download dependency '" + dep + "'");
@@ -81,6 +80,7 @@ public class FXLoader {
 			try {
 				Path filePath = Paths.get(downloadPath.getPath(), spl[0] + "-" + classifier + ".jar");
 				if(!Files.exists(filePath)) {
+					log("Downloading " + dep + " (native code)...");
 					HttpResponse<byte[]> r = httpClient.send(withClassifier, BodyHandlers.ofByteArray());
 					if(r.statusCode() == 404) {
 						log("Dependency " + dep + " doesn't seem to have platform-specific code");

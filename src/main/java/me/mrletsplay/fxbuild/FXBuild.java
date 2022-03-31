@@ -123,21 +123,25 @@ public class FXBuild extends AbstractMojo {
 				.collect(Collectors.joining(";"));
 			
 			Path metaPath = fs.getPath("/META-INF/fxbuild/meta.txt");
-			Files.createDirectories(metaPath.getParent());
-			Files.write(metaPath, meta.getBytes(StandardCharsets.UTF_8));
-			
-			Path copyFiles = plFS.getPath("/me/mrletsplay/fxbuild/loader/");
-			Files.walk(copyFiles).forEach(fl -> {
-				if(Files.isDirectory(fl)) return;
-				getLog().info("Copying " + fl);
-				Path dest = fs.getPath(fl.toString());
-				try {
-					Files.createDirectories(dest.getParent());
-					Files.copy(fl, dest, StandardCopyOption.REPLACE_EXISTING);
-				} catch (IOException e) {
-					throw new RuntimeException("Failed to copy file", e);
-				}
-			});
+			if(Files.exists(metaPath)) {
+				getLog().info("File appears to be patched already, not writing meta file");
+			}else {
+				Files.createDirectories(metaPath.getParent());
+				Files.write(metaPath, meta.getBytes(StandardCharsets.UTF_8));
+				
+				Path copyFiles = plFS.getPath("/me/mrletsplay/fxbuild/loader/");
+				Files.walk(copyFiles).forEach(fl -> {
+					if(Files.isDirectory(fl)) return;
+					getLog().info("Copying " + fl);
+					Path dest = fs.getPath(fl.toString());
+					try {
+						Files.createDirectories(dest.getParent());
+						Files.copy(fl, dest, StandardCopyOption.REPLACE_EXISTING);
+					} catch (IOException e) {
+						throw new RuntimeException("Failed to copy file", e);
+					}
+				});
+			}
 		} catch (IOException | URISyntaxException e) {
 			throw new MojoExecutionException("Failed to patch JAR file", e);
 		}catch(RuntimeException e) {
@@ -145,5 +149,12 @@ public class FXBuild extends AbstractMojo {
 		}
 		
 		getLog().info("Moving back");
+		try {
+			Files.move(tempFile.toPath(), buildFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			throw new MojoExecutionException("Failed to move file", e);
+		}
+		
+		getLog().info("Done!");
 	}
 }
