@@ -6,7 +6,7 @@
 
 	<groupId>me.mrletsplay</groupId>
 	<artifactId>fxbuild-maven-plugin</artifactId>
-	<version>1.0-SNAPSHOT</version>
+	<version>1.0</version>
 	<packaging>maven-plugin</packaging>
 
 	<name>fxbuild-maven-plugin Maven Plugin</name>
