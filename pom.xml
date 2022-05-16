@@ -11,8 +11,7 @@
 
 	<name>fxbuild-maven-plugin Maven Plugin</name>
 
-	<!-- FIXME change it to the project's website -->
-	<url>https://github.com/MrLetsplay2003</url>
+	<url>https://github.com/MrLetsplay2003/fxbuild-maven-plugin</url>
 
 	<prerequisites>
 		<maven>${maven.version}</maven>
