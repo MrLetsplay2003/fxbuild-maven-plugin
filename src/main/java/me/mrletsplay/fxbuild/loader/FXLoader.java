@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class FXLoader {
-	
+
 	private static final String MAVEN_REPO_URL = "https://repo1.maven.org/maven2/org/openjfx/{artifact}/{version}/{artifact}-{version}{classifier}.jar";
-	
+
 	public static void main(String[] args) {
 		URL selfURL = FXLoader.class.getProtectionDomain().getCodeSource().getLocation();
 		String mainClass;
@@ -37,16 +37,25 @@ public class FXLoader {
 		} catch (IOException | URISyntaxException e) {
 			throw new FXLoaderException("Failed to load metadata file", e);
 		}
-		
+
 		log("Main class: " + mainClass);
 		log("Required dependencies: " + dependencies.stream().collect(Collectors.joining(", ")));
-		
-		String classifier = System.getProperty("os.name").toLowerCase().contains("windows") ? "win" : "linux";
+
+		String osName = System.getProperty("os.name").toLowerCase();
+		String classifier;
+		if(osName.contains("windows")) {
+			classifier = "win";
+		}else if(osName.contains("mac") || osName.contains("darwin")) {
+			classifier = "mac";
+		}else {
+			classifier = "linux";
+		}
+
 		File downloadPath = new File("lib");
 		downloadPath.mkdirs();
-		
+
 		log("Downloading dependencies...");
-		
+
 		List<URL> urls = new ArrayList<>();
 		urls.add(selfURL);
 
@@ -56,7 +65,7 @@ public class FXLoader {
 			String partialURL = MAVEN_REPO_URL
 					.replace("{artifact}", spl[0])
 					.replace("{version}", spl[1]);
-			
+
 			HttpRequest noClassifier = HttpRequest.newBuilder(URI.create(partialURL.replace("{classifier}", ""))).build();
 			try {
 				Path filePath = Paths.get(downloadPath.getPath(), spl[0] + ".jar");
@@ -69,13 +78,13 @@ public class FXLoader {
 						System.exit(1);
 						return;
 					}
-					
+
 					Files.write(filePath, r.body());
 				}
 			} catch (IOException | InterruptedException e) {
 				throw new FXLoaderException("Failed to download dependency '" + dep + "'", e);
 			}
-			
+
 			HttpRequest withClassifier = HttpRequest.newBuilder(URI.create(partialURL.replace("{classifier}", "-" + classifier))).build();
 			try {
 				Path filePath = Paths.get(downloadPath.getPath(), spl[0] + "-" + classifier + ".jar");
@@ -86,13 +95,13 @@ public class FXLoader {
 						log("Dependency " + dep + " doesn't seem to have platform-specific code");
 						continue;
 					}
-					
+
 					if(r.statusCode() != 200) {
 						log("Failed to download dependency '" + dep + "'");
 						System.exit(1);
 						return;
 					}
-					
+
 					Files.write(filePath, r.body());
 					urls.add(filePath.toUri().toURL());
 				}else {
@@ -102,7 +111,7 @@ public class FXLoader {
 				throw new FXLoaderException("Failed to download dependency '" + dep + "'", e);
 			}
 		}
-		
+
 		try {
 			ClassLoader cl = new FXClassLoader(urls.toArray(URL[]::new), FXLoader.class.getClassLoader());
 			Thread.currentThread().setContextClassLoader(cl);
@@ -114,7 +123,7 @@ public class FXLoader {
 			e.getTargetException().printStackTrace();
 		}
 	}
-	
+
 	private static void log(String msg) {
 		System.out.println("[FXLoader] " + msg);
 	}
