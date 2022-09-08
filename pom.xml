@@ -6,7 +6,7 @@
 
 	<groupId>me.mrletsplay</groupId>
 	<artifactId>fxbuild-maven-plugin</artifactId>
-	<version>1.1</version>
+	<version>1.2</version>
 	<packaging>maven-plugin</packaging>
 
 	<name>fxbuild-maven-plugin Maven Plugin</name>
@@ -27,7 +27,7 @@
 	<repositories>
 		<repository>
 			<id>Graphite-Official</id>
-			<url>https://graphite-official.com/repo</url>
+			<url>https://maven.graphite-official.com</url>
 		</repository>
 	</repositories>
 
@@ -77,7 +77,12 @@
 		<dependency>
 			<groupId>me.mrletsplay</groupId>
 			<artifactId>MrCore</artifactId>
-			<version>3.4.5</version>
+			<version>4.1</version>
+		</dependency>
+		<dependency>
+			<groupId>me.mrletsplay</groupId>
+			<artifactId>FXLoader</artifactId>
+			<version>1.0</version>
 		</dependency>
 	</dependencies>
 
