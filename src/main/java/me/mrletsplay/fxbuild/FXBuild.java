@@ -25,7 +25,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 
-import me.mrletsplay.fxbuild.launcher.FXBuildLauncher;
+import me.mrletsplay.fxloader.launcher.FXLoaderLauncher;
 
 /**
  * Goal which touches a timestamp file.
@@ -120,7 +120,7 @@ public class FXBuild extends AbstractMojo {
 
 			getLog().info("Writing manifest");
 
-			mf.getMainAttributes().putValue("Main-Class", FXBuildLauncher.class.getName());
+			mf.getMainAttributes().putValue("Main-Class", FXLoaderLauncher.class.getName());
 			try(OutputStream out = Files.newOutputStream(p)) {
 				mf.write(out);
 			}
@@ -139,21 +139,8 @@ public class FXBuild extends AbstractMojo {
 				Files.createDirectories(metaPath.getParent());
 				Files.write(metaPath, meta.getBytes(StandardCharsets.UTF_8));
 
-				Path copyFiles = plFS.getPath("/me/mrletsplay/fxbuild/launcher/");
+				Path copyFiles = plFS.getPath("/me/mrletsplay/fxloader/");
 				Files.walk(copyFiles).forEach(fl -> {
-					if(Files.isDirectory(fl)) return;
-					getLog().info("Copying " + fl);
-					Path dest = fs.getPath(fl.toString());
-					try {
-						Files.createDirectories(dest.getParent());
-						Files.copy(fl, dest, StandardCopyOption.REPLACE_EXISTING);
-					} catch (IOException e) {
-						throw new RuntimeException("Failed to copy file", e);
-					}
-				});
-
-				Path copyFiles2 = plFS.getPath("/me/mrletsplay/fxloader/");
-				Files.walk(copyFiles2).forEach(fl -> {
 					if(Files.isDirectory(fl)) return;
 					getLog().info("Copying " + fl);
 					Path dest = fs.getPath(fl.toString());
