@@ -75,8 +75,8 @@ public class FXBuild extends AbstractMojo {
 
 		getLog().info("Patching file");
 
-		try(FileSystem fs = FileSystems.newFileSystem(tempFile.toPath(), null);
-				FileSystem plFS = FileSystems.newFileSystem(Paths.get(selfURL.toURI()), null)) {
+		try(FileSystem fs = FileSystems.newFileSystem(tempFile.toPath(), (ClassLoader) null);
+				FileSystem plFS = FileSystems.newFileSystem(Paths.get(selfURL.toURI()), (ClassLoader) null)) {
 			Path p = fs.getPath("/META-INF/MANIFEST.MF");
 
 			Manifest mf;
